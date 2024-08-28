@@ -1,0 +1,7 @@
+/var/log/mcollective-audit.log {
+    compress
+    copytruncate
+    notifempty
+    rotate 50
+    size 100M
+}

@@ -1,0 +1,21 @@
+--- ./Builder/target/mcollective-2.12.1/lib/mcollective/runner.rb	2018-04-18 17:35:32.000000000 +0100
++++ ./Builder/runner.rb.bak	2022-02-03 08:22:43.604649413 +0000
+@@ -213,7 +213,17 @@ module MCollective
+ 
+     # Deals with messages directed to agents
+     def agentmsg(request)
+-      Log.info("Handling message #{request.description}: #{request.payload[:body]}")
++      sanitized_data = Marshal.load(Marshal.dump(request.payload[:body]))
++      if (sanitized_data.respond_to?(:has_key?))
++        if (sanitized_data.has_key? :data)
++          [:password, :new_pass, :pass_key].each do |password_key|
++            if (sanitized_data[:data].has_key? (password_key))
++              sanitized_data[:data][password_key] = 'XXXX'
++            end
++          end
++        end
++      end
++      Log.info("Handling message #{request.description}: #{sanitized_data}")
+ 
+       @agents.dispatch(request, @connection) do |reply_message|
+         reply(reply_message, request) if reply_message

@@ -1,0 +1,11 @@
+--- yaml_facts.rb	2021-05-04 11:11:26.164526478 +0000
++++ yaml_facts2.rb	2021-05-04 11:13:36.451907686 +0000
+@@ -24,7 +24,7 @@ module MCollective
+           begin
+             if File.exist?(file)
+ 	      if YAML.respond_to? :safe_load
+-                facts.merge!(YAML.safe_load(File.read(file), [Symbol], [], true))
++                facts.merge!(YAML.safe_load(File.read(file), :deserialize_symbols => true))
+ 	      else
+                 facts.merge!(YAML.load(File.read(file)))  # rubocop:disable Security/YAMLLoad
+               end

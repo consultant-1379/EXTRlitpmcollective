@@ -1,0 +1,17 @@
+--- logfile.rb	2018-04-18 17:35:32.000000000 +0100
++++ logfile.rb.new	2021-04-13 11:22:47.445538772 +0100
+@@ -18,7 +18,13 @@ module MCollective
+         now_iso8601 = now.utc.strftime("%Y-%m-%d %H:%M:%S UTC")
+ 
+         File.open(logfile, "a") do |f|
+-          f.puts("[#{now_iso8601}] reqid=#{request.uniqid}: reqtime=#{request.time} caller=#{request.caller}@#{request.sender} agent=#{request.agent} action=#{request.action} data=#{request.data.pretty_print_inspect}")
++          sanitized_data = Marshal.load(Marshal.dump(request.data))
++          [:password, :new_pass].each do |password_key|
++              if sanitized_data.has_key?(password_key)
++                  sanitized_data[password_key] = 'XXXX'
++              end
++          end
++          f.puts("[#{now_iso8601}] reqid=#{request.uniqid}: reqtime=#{request.time} caller=#{request.caller}@#{request.sender} agent=#{request.agent} action=#{request.action} data=#{sanitized_data.pretty_print_inspect}")
+         end
+       end
+     end

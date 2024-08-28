@@ -1,0 +1,141 @@
+--- mcollective.spec.orig	2018-04-18 17:35:42.000000000 +0100
++++ mcollective.spec	2022-08-09 16:26:11.239138683 +0100
+@@ -13,20 +13,27 @@
+ 
+ # VERSION is subbed out during rake package:srpm process
+ %global         realversion 2.12.1
+-%global         rpmversion 2.12.1
++%global         rpmversion <rpm.version>
++%global         packager <ericsson.rstate>
++
++# The original name mcollective will keep in files after installation
++%global         realname mcollective
+ 
+ Summary:        Application Server for hosting Ruby code on any capable middleware
+-Name:           mcollective
++Name:           EXTRlitpmcollective_CXP9031034
+ Version:        %{rpmversion}
+-Release:        1%{?dist}
++Release:        1
+ Group:          System Environment/Daemons
+ License:        ASL 2.0
++Source1:        mcollective.logrotate
+ URL:            http://puppetlabs.com/mcollective/introduction/
+-Source0:        http://downloads.puppetlabs.com/mcollective/%{name}-%{realversion}.tar.gz
+-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
++Source0:        %{realname}-%{realversion}.tar.gz
++BuildRoot:      %{_tmppath}/%{realname}-%{realversion}-%{release}-root-%(%{__id_u} -n)
+ BuildRequires:  ruby >= 1.8
+-Requires:       mcollective-common = %{version}-%{release}
+-Packager:       Puppet Labs <info@puppetlabs.com>
++Requires:       mcollective-common = %{realversion}-%{release}
++Provides:       %{realname} = %{realversion}
++Provides:       config(%{realname}) = %{realversion}
++Packager:       %{packager}
+ BuildArch:      noarch
+ 
+ %if 0%{?_with_systemd}
+@@ -45,35 +52,44 @@ Requires:       initscripts
+ %endif
+ 
+ %description
++mcollective 2.12.1 repackaged by Ericsson from Puppet Labs source code.
++
+ The Marionette Collective:
+ 
+ Server for the mcollective Application Server
+ 
+-%package common
++%package -n EXTRlitpmcollectivecommon_CXP9031353
+ Summary:        Common libraries for the mcollective clients and servers
+ Group:          System Environment/Libraries
+ Requires:       ruby >= 1.8
+ Requires:       rubygems >= 1.3.7
+ Requires:       rubygem-stomp
+ Requires:       rubygem-json
++Provides:       config(%{realname}-common) = %{realversion}
++Provides:       %{realname}-common = %{realversion}
+ 
+-%description common
++%description -n EXTRlitpmcollectivecommon_CXP9031353
++mcollective-common 2.12.1 repackaged by Ericsson from Puppet Labs source code.
+ The Marionette Collective:
+ 
+ Common libraries for the mcollective clients and servers
+ 
+-%package client
++%package -n EXTRlitpmcollectiveclient_CXP9031352
+ Summary:        Client tools for the mcollective Application Server
+-Requires:       mcollective-common = %{version}-%{release}
++Requires:       mcollective-common = %{realversion}-%{release}
++Provides:       config(%{realname}-client) = %{realversion}
++Provides:       %{realname}-client = %{realversion}
+ Group:          Applications/System
+ 
+-%description client
++%description -n EXTRlitpmcollectiveclient_CXP9031352
++mcollective-client 2.12.1 repackaged by Ericsson from Puppet Labs source code.
++
+ The Marionette Collective:
+ 
+ Client tools for the mcollective Application Server
+ 
+ %prep
+-%setup -q -n %{name}-%{realversion}
++%setup -q -n %{realname}-%{realversion}
+ 
+ %build
+ 
+@@ -85,6 +101,7 @@ ruby install.rb --destdir=%{buildroot} -
+ %if 0%{?_with_systemd}
+ %{__install} -d -m0755  %{buildroot}%{_unitdir}
+ %{__install} -m0644 ext/redhat/mcollective.service %{buildroot}%{_unitdir}/mcollective.service
++%{__install} -Dp -m0755 ext/redhat/mcollectivectl.sh %{buildroot}/usr/local/bin/mcollectivectl.sh
+ %else
+ %{__install} -d -m0755  %{buildroot}%{_sysconfdir}/init.d
+ %if 0%{?suse_version}
+@@ -97,6 +114,9 @@ ruby install.rb --destdir=%{buildroot} -
+ %{__install} -d -m0755  %{buildroot}%{_sysconfdir}/mcollective/plugin.d
+ %{__install} -d -m0755  %{buildroot}%{_sysconfdir}/mcollective/ssl/clients
+ 
++# Copy the logrotate file to root directory
++%{__install} -p -D -m 0644 %{S:1} %{buildroot}%{_sysconfdir}/logrotate.d/mcollective
++
+ %clean
+ rm -rf %{buildroot}
+ 
+@@ -135,7 +155,7 @@ if [ "$1" = 0 ] ; then
+ fi
+ %endif
+ 
+-%files common
++%files -n EXTRlitpmcollectivecommon_CXP9031353
+ %defattr(-, root, root, 0755)
+ %doc COPYING
+ %doc doc
+@@ -145,7 +165,7 @@ fi
+ %dir %{_sysconfdir}/mcollective/ssl
+ %config %{_sysconfdir}/mcollective/*.erb
+ 
+-%files client
++%files -n EXTRlitpmcollectiveclient_CXP9031352
+ %defattr(-, root, root, 0755)
+ %attr(0755, root, root)%{_bindir}/mco
+ %doc COPYING
+@@ -157,6 +177,7 @@ fi
+ %attr(0755, root, root)%{_sbindir}/mcollectived
+ %if 0%{?_with_systemd}
+ %{_unitdir}/mcollective.service
++/usr/local/bin/mcollectivectl.sh
+ %else
+ %{_sysconfdir}/init.d/mcollective
+ %endif
+@@ -165,6 +186,8 @@ fi
+ %dir %{_sysconfdir}/mcollective/ssl/clients
+ %config(noreplace)%{_sysconfdir}/mcollective/plugin.d
+ 
++%config(noreplace) %{_sysconfdir}/logrotate.d/mcollective
++
+ %changelog
+ * Wed Apr 18 2018 Puppet Labs Release <info@puppetlabs.com> -  2.12.1-1
+ - Build for 2.12.1
